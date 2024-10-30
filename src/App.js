@@ -1,17 +1,19 @@
+import React from "react";
 import "./App.css";
 import AvailableBus from "./Pages/AvailableBusPage/AvailableBus.js";
 import AdminProfile from "./Pages/AdminProfile/AdminProfile.js";
 import MainPage from "./Pages/MainPage/MainPage.js";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import NewPage from "./Pages/TestPage/NewPage.js";
 import Registration from "./Pages/Registration/Registration.js";
 import Autorization from "./Pages/Autorization/Autorization.js";
 import MakingOrder from "./Pages/MakingOrder/MakingOrder.js";
 import UserPage from "./Pages/UserPage/UserPage.js";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+// Создаем Redux хранилище
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <div className="App">
         <Routes>
           <Route path="/" element={<MainPage />} />
@@ -25,7 +27,7 @@ function App() {
           <Route path="*" element={<MainPage />} />
         </Routes>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 

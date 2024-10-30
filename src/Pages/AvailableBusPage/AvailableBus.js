@@ -9,7 +9,11 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Input from "@mui/material/Input";
 import Label from "@mui/material/FormLabel";
-import Span from "@mui/material";
+import { useDispatch } from "react-redux";
+
+// import { addRoute, deleteRoute } from "../../store/slice/busSlice";
+import { addRoute, deleteRoute, updateRoute } from "../../store/slice/busSlice";
+import { useSelector } from "react-redux";
 
 const ModalWindow = ({ onClose, record }) => {
   return (
@@ -46,13 +50,12 @@ function AvailableBus() {
   const [editIndex, setEditIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-
-  // Состояние для отображения модального окна
   const [showModal, setShowModal] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState(null); // Для хранения выбранной карточки
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const BusRoutes = useSelector((state) => state.BusRoute);
 
   useEffect(() => {
-    setCards(Cards);
+    setCards(BusRoutes);
   }, []);
 
   const handleChange = (e) => {
@@ -63,21 +66,59 @@ function AvailableBus() {
     });
   };
 
-  // Метод вызываемый для когда нажата кнопка отправки формы
+  const dispatch = useDispatch();
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editIndex !== null) {
       const updatedCards = [...cards];
       updatedCards[editIndex] = formData;
       setCards(updatedCards);
+      dispatch(
+        updateRoute({
+          id: formData.id,
+          startCity: formData.startCity,
+          finishCity: formData.finishCity,
+          startTime: formData.startTime,
+          finishTime: formData.finishTime,
+          price: formData.price,
+          platformNumber: formData.platformNumber,
+          monday: formData.monday,
+          tuesday: formData.tuesday,
+          wednesday: formData.wednesday,
+          thursday: formData.thursday,
+          friday: formData.friday,
+          saturday: formData.saturday,
+          sunday: formData.sunday,
+        })
+      );
       setEditIndex(null);
     } else {
       setCards([...cards, formData]);
+
+      dispatch(
+        addRoute({
+          id: BusRoutes[BusRoutes.length - 1].id + 1,
+          startCity: formData.startCity,
+          finishCity: formData.finishCity,
+          startTime: formData.startTime,
+          finishTime: formData.finishTime,
+          price: formData.price,
+          platformNumber: formData.platformNumber,
+          monday: formData.monday,
+          tuesday: formData.tuesday,
+          wednesday: formData.wednesday,
+          thursday: formData.thursday,
+          friday: formData.friday,
+          saturday: formData.saturday,
+          sunday: formData.sunday,
+        })
+      );
     }
+    console.log(BusRoutes);
     resetForm();
   };
 
-  // Метод для сброса данных в форме
   const resetForm = () => {
     setFormData({
       startCity: "",
@@ -97,14 +138,12 @@ function AvailableBus() {
     });
   };
 
-  // Метод для поиска карточек
   const filteredRoutes = cards.filter(
     (card) =>
       card.startCity.toLowerCase().includes(searchTerm.toLowerCase()) ||
       card.finishCity.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Метод для соритровки
   const sortedRoutes = [...filteredRoutes].sort((a, b) => {
     if (sortConfig.key === null) return 0;
     const aValue = a[sortConfig.key].toLowerCase();
@@ -123,30 +162,44 @@ function AvailableBus() {
   };
 
   const handleEdit = (index) => {
+    const routeToEdit = cards[index];
     setEditIndex(index);
-    setFormData(cards[index]);
+    setFormData({
+      ...routeToEdit,
+      // Добавьте здесь явное присваивание для каждого дня
+      monday: routeToEdit.monday,
+      tuesday: routeToEdit.tuesday,
+      wednesday: routeToEdit.wednesday,
+      thursday: routeToEdit.thursday,
+      friday: routeToEdit.friday,
+      saturday: routeToEdit.saturday,
+      sunday: routeToEdit.sunday,
+    });
   };
 
   const handleDelete = (index) => {
+    const routeToDelete = cards[index]; // Получаем маршрут, который нужно удалить
+    dispatch(deleteRoute({ id: routeToDelete.id })); // Используем правильный id
     const updatedCards = cards.filter((_, i) => i !== index);
     setCards(updatedCards);
+    console.log(BusRoutes);
   };
 
   const handleChangeDay = (day) => {
     setFormData((prev) => ({
       ...prev,
-      [day]: !prev[day],
+      [day]: !prev[day], // Переключаем значение дня
     }));
   };
 
   const handleDisplayAlert = (route) => {
-    setSelectedRecord(route); // Устанавливаем выбранную карточку
+    setSelectedRecord(route);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setSelectedRecord(null); // Сбрасываем выбранную карточку
+    setSelectedRecord(null);
   };
 
   const options = ["Чаусы-Могилев", "Чаусы-Могилев 2", "Чаусы-Могилев 3"];
@@ -228,13 +281,12 @@ function AvailableBus() {
           <Autocomplete
             options={options}
             value={`${formData.startCity}-${formData.finishCity}`}
-            name="start-finish-city"
-            sx={{
-              maxWidth: 250,
-              marginBottom: 20,
-              display: "block",
-              margin: "auto",
-              top: -7,
+            onChange={(event, newValue) => {
+              setFormData({
+                ...formData,
+                startCity: newValue.split("-")[0],
+                finishCity: newValue.split("-")[1],
+              });
             }}
             renderInput={(params) => <TextField {...params} label="Маршрут" />}
           />
@@ -265,9 +317,7 @@ function AvailableBus() {
             <Label>
               Цена:
               <Input
-                sx={{
-                  maxWidth: 70,
-                }}
+                sx={{ maxWidth: 70 }}
                 type="number"
                 name="price"
                 value={formData.price}
@@ -281,9 +331,7 @@ function AvailableBus() {
           <div className="DivDisplayFlex">
             <Label>Номер платформы:</Label>
             <Input
-              sx={{
-                maxWidth: 60,
-              }}
+              sx={{ maxWidth: 60 }}
               type="number"
               name="platformNumber"
               value={formData.platformNumber}
@@ -294,15 +342,11 @@ function AvailableBus() {
 
           <Autocomplete
             options={options}
-            value={formData.carrier !== "" ? formData.carrier : "-"}
+            value={formData.carrier || "-"}
             name="carrier"
-            sx={{
-              maxWidth: 250,
-              marginBottom: 20,
-              display: "block",
-              margin: "auto",
-              top: -7,
-            }}
+            onChange={(event, newValue) =>
+              setFormData({ ...formData, carrier: newValue })
+            }
             renderInput={(params) => (
               <TextField {...params} label="Перевозчик" />
             )}
@@ -323,66 +367,23 @@ function AvailableBus() {
               </thead>
               <tbody>
                 <tr>
-                  <td key={"monday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.monday}
-                      onChange={() => handleChangeDay("monday")}
-                    />
-                  </td>
-                  <td key={"tuesday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.tuesday}
-                      onChange={() => handleChangeDay("tuesday")}
-                    />
-                  </td>
-                  <td key={"wednesday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.wednesday}
-                      onChange={() => handleChangeDay("wednesday")}
-                    />
-                  </td>
-                  <td key={"thursday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.thursday}
-                      onChange={() => handleChangeDay("thursday")}
-                    />
-                  </td>
-                  <td key={"friday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.friday}
-                      onChange={() => handleChangeDay("friday")}
-                    />
-                  </td>
-                  <td key={"saturday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.saturday}
-                      onChange={() => handleChangeDay("saturday")}
-                    />
-                  </td>
-                  <td key={"sunday"}>
-                    <Input
-                      type="checkbox"
-                      checked={formData.sunday}
-                      onChange={() => handleChangeDay("sunday")}
-                    />
-                  </td>
-                  {/* {Object.keys(formData)
-                    .slice(6)
-                    .map((day) => (
-                      <td key={day}>
-                        <input
-                          type="checkbox"
-                          checked={formData[day]}
-                          onChange={() => handleChangeDay(day)}
-                        />
-                      </td>
-                    ))} */}
+                  {[
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                  ].map((day) => (
+                    <td key={day}>
+                      <input
+                        type="checkbox"
+                        checked={formData[day]}
+                        onChange={() => handleChangeDay(day)}
+                      />
+                    </td>
+                  ))}
                 </tr>
               </tbody>
             </table>
@@ -394,20 +395,6 @@ function AvailableBus() {
         </form>
       </div>
 
-      {/* <h2>Доступные маршруты</h2>
-      <div className="cards BusAllCards">
-        {cards.map((record, index) => (
-          <div key={index}>
-            <CardBus
-              {...record}
-              onEdit={() => handleEdit(index)}
-              onDelete={() => handleDelete(index)}
-            />
-          </div>
-        ))}
-      </div> */}
-
-      {/* Модальное окно */}
       {showModal && selectedRecord && (
         <ModalWindow onClose={closeModal} record={selectedRecord} />
       )}
